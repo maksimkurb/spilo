@@ -13,7 +13,7 @@ sed -i 's/^#\s*\(deb.*universe\)$/\1/g' /etc/apt/sources.list
 
 apt-get update
 
-BUILD_PACKAGES=(devscripts equivs build-essential fakeroot debhelper git gcc libc6-dev make cmake libevent-dev libbrotli-dev libssl-dev libkrb5-dev)
+BUILD_PACKAGES=(devscripts equivs build-essential fakeroot debhelper git gcc libc6-dev make cmake libevent-dev libbrotli-dev libssl-dev libkrb5-dev libreadline-dev flex bison libxml2-dev libxslt-dev libxml2-utils xsltproc ccache clang)
 if [ "$DEMO" = "true" ]; then
     export DEB_PG_SUPPORTED_VERSIONS="$PGVERSION"
     WITH_PERL=false
@@ -57,8 +57,11 @@ curl -sL "https://github.com/zalando-pg/pg_auth_mon/archive/$PG_AUTH_MON_COMMIT.
 curl -sL "https://github.com/cybertec-postgresql/pg_permissions/archive/$PG_PERMISSIONS_COMMIT.tar.gz" | tar xz
 curl -sL "https://github.com/hughcapet/pg_tm_aux/archive/$PG_TM_AUX_COMMIT.tar.gz" | tar xz
 curl -sL "https://github.com/zubkov-andrei/pg_profile/archive/$PG_PROFILE.tar.gz" | tar xz
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+export PATH=$HOME/.cargo/bin:$PATH
 git clone -b "$SET_USER" https://github.com/pgaudit/set_user.git
 git clone https://github.com/timescale/timescaledb.git
+git clone https://github.com/tensorchord/pgvecto.rs.git
 
 apt-get install -y \
     postgresql-common \
@@ -132,6 +135,21 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
         "${EXTRAS[@]}"
 
     # Install 3rd party stuff
+    if [ "${version%.*}" -ge 14 ]; then
+        (
+            cd pgvecto.rs
+            git checkout "v${PGVECTO_RS}"
+            PGRX_REV=$(grep 'pgrx =' Cargo.toml | awk -F'rev = "' '{print $2}' | cut -d'"' -f1)
+            PGRX_VERSION=$(grep '^pgrx ' Cargo.toml | awk -F'\"' '{print $2}')
+            if [ -n "$PGRX_REV" ]; then
+                cargo install cargo-pgrx --git https://github.com/tensorchord/pgrx.git --rev "$PGRX_REV"
+            else
+                cargo install cargo-pgrx --version "$PGRX_VERSION"
+            fi
+            cargo pgrx init "--pg${version}=/usr/lib/postgresql/${version}/bin/pg_config"
+            cargo pgrx install --release
+        )
+    fi
 
     # use subshell to avoid having to cd back (SC2103)
     (
