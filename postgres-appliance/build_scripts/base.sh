@@ -66,6 +66,15 @@ apt-get install -y \
     python3.10 \
     python3-psycopg2
 
+# pgvecto.rs and vectorchord deps start
+apt-get install -y --no-install-recommends \
+    tzdata \
+    ca-certificates \
+    curl \
+    software-properties-common
+
+# pgvecto.rs and vectorchord deps end
+
 # forbid creation of a main cluster when package is installed
 sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf
 
@@ -134,6 +143,41 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
     find "/usr/lib/postgresql/$version/lib/" \( -name 'timescaledb-2.*.so' -o -name 'timescaledb-tsl-2.*.so' \) "${exclude_patterns[@]}" -delete
 
     # Install 3rd party stuff
+    # pgvecto.rs start
+    if [ "${version%.*}" -ge 14 ]; then
+        (
+            mkdir -p pgvecto.rs
+            cd pgvecto.rs
+            ARCH="$(dpkg --print-architecture)"
+            if [ "$ARCH" = "amd64" ]; then
+                PGVECTORS_ARCH='amd64'
+            else
+                PGVECTORS_ARCH='arm64'
+            fi
+            curl -kOL "https://github.com/tensorchord/pgvecto.rs/releases/download/v${PGVECTO_RS}/vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
+            apt-get install -y "./vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
+            rm -Rf "vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
+        )
+    fi
+    # pgvecto.rs end
+    
+    # VectorChord start
+    if [ "${version%.*}" -ge 14 ]; then
+        (
+            mkdir -p vectorchord
+            cd vectorchord
+            ARCH="$(dpkg --print-architecture)"
+            if [ "$ARCH" = "amd64" ]; then
+                VECTORCHORD_ARCH='amd64'
+            else
+                VECTORCHORD_ARCH='arm64'
+            fi
+            curl -kOL "https://github.com/tensorchord/VectorChord/releases/download/${VECTORCHORD}/postgresql-${version}-vchord_${VECTORCHORD}-1_${VECTORCHORD_ARCH}.deb"
+            apt-get install -y "./postgresql-${version}-vchord_${VECTORCHORD}-1_${VECTORCHORD_ARCH}.deb"
+            rm -Rf "postgresql-${version}-vchord_${VECTORCHORD}-1_${VECTORCHORD_ARCH}.deb"
+        )
+    fi
+    # VectorChord end
 
     if [ "${TIMESCALEDB_APACHE_ONLY}" != "true" ] && [ "${TIMESCALEDB_TOOLKIT}" = "true" ]; then
         apt-get update

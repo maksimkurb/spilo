@@ -1,5 +1,8 @@
 ARG BASE_IMAGE=ubuntu:22.04
 ARG PGVERSION=17
+ARG TIMESCALEDB="2.15.3 2.17.2"
+ARG PGVECTO_RS="0.4.0"
+ARG VECTORCHORD="0.4.1"
 ARG DEMO=false
 ARG COMPRESS=false
 ARG ADDITIONAL_LOCALES=
@@ -45,6 +48,8 @@ COPY --from=dependencies-builder /builddeps/*.deb /builddeps/
 ARG PGVERSION
 ARG TIMESCALEDB_APACHE_ONLY=true
 ARG TIMESCALEDB_TOOLKIT=true
+ARG PGVECTO_RS
+ARG VECTORCHORD
 ARG COMPRESS
 ARG PGOLDVERSIONS="13 14 15 16"
 ARG WITH_PERL=false
@@ -90,6 +95,8 @@ FROM builder-${COMPRESS}
 LABEL maintainer="Team ACID @ Zalando <team-acid@zalando.de>"
 
 ARG PGVERSION
+ARG PGVECTO_RS
+ARG VECTORCHORD
 ARG DEMO
 ARG COMPRESS
 
@@ -99,6 +106,7 @@ ENV LC_ALL=en_US.utf-8 \
     PATH=$PATH:/usr/lib/postgresql/$PGVERSION/bin \
     PGHOME=/home/postgres \
     RW_DIR=/run \
+    PGVECTO_RS=$PGVECTO_RS \
     DEMO=$DEMO
 
 ENV WALE_ENV_DIR=$RW_DIR/etc/wal-e.d/env \
