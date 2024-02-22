@@ -66,6 +66,15 @@ apt-get install -y \
     python3.10 \
     python3-psycopg2
 
+# pgvecto.rs deps start
+apt-get install -y --no-install-recommends \
+    tzdata \
+    ca-certificates \
+    curl \
+    software-properties-common
+
+# pgvecto.rs deps end
+
 # forbid creation of a main cluster when package is installed
 sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf
 
@@ -135,6 +144,23 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
     fi
 
     # Install 3rd party stuff
+    # pgvecto.rs start
+    if [ "${version%.*}" -ge 14 ]; then
+        (
+            mkdir -p pgvecto.rs
+            cd pgvecto.rs
+            ARCH="$(dpkg --print-architecture)"
+            if [ "$ARCH" = "amd64" ]; then
+                PGVECTORS_ARCH='amd64'
+            else
+                PGVECTORS_ARCH='arm64'
+            fi
+            curl -kOL "https://github.com/tensorchord/pgvecto.rs/releases/download/v${PGVECTO_RS}/vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
+            apt-get install -y "./vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
+            rm -Rf "vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
+        )
+    fi
+    # pgvecto.rs end
 
     if [ "${TIMESCALEDB_APACHE_ONLY}" != "true" ] && [ "${TIMESCALEDB_TOOLKIT}" = "true" ]; then
         apt-get update
