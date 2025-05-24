@@ -66,14 +66,14 @@ apt-get install -y \
     python3.10 \
     python3-psycopg2
 
-# pgvecto.rs deps start
+# pgvecto.rs and vectorchord deps start
 apt-get install -y --no-install-recommends \
     tzdata \
     ca-certificates \
     curl \
     software-properties-common
 
-# pgvecto.rs deps end
+# pgvecto.rs and vectorchord deps end
 
 # forbid creation of a main cluster when package is installed
 sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf
@@ -160,6 +160,24 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
         )
     fi
     # pgvecto.rs end
+    
+    # VectorChord start
+    if [ "${version%.*}" -ge 14 ]; then
+        (
+            mkdir -p vectorchord
+            cd vectorchord
+            ARCH="$(dpkg --print-architecture)"
+            if [ "$ARCH" = "amd64" ]; then
+                TENSORCHORD_ARCH='amd64'
+            else
+                TENSORCHORD_ARCH='arm64'
+            fi
+            curl -kOL "https://github.com/tensorchord/VectorChord/releases/download/${TENSORCHORD}/postgresql-${version}-vchord_${TENSORCHORD}-1_${TENSORCHORD_ARCH}.deb"
+            apt-get install -y "./postgresql-${version}-vchord_${TENSORCHORD}-1_${TENSORCHORD_ARCH}.deb"
+            rm -Rf "postgresql-${version}-vchord_${TENSORCHORD}-1_${TENSORCHORD_ARCH}.deb"
+        )
+    fi
+    # VectorChord end
 
     if [ "${TIMESCALEDB_APACHE_ONLY}" != "true" ] && [ "${TIMESCALEDB_TOOLKIT}" = "true" ]; then
         apt-get update
