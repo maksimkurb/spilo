@@ -1,4 +1,15 @@
 =========================================
+Spilo fork with VectorChord and pgvecto.rs support
+=========================================
+
+This is a fork of the original Spilo repository with VectorChord and pgvecto.rs support.
+
+To use this image, you need to set one or multiple of the following environment variables:
+- USE_VECTORCHORD=true
+- USE_PGVECTO_RS=true
+
+
+=========================================
 Spilo: HA PostgreSQL Clusters with Docker
 =========================================
 
