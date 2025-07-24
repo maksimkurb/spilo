@@ -143,24 +143,6 @@ for version in $DEB_PG_SUPPORTED_VERSIONS; do
     find "/usr/lib/postgresql/$version/lib/" \( -name 'timescaledb-2.*.so' -o -name 'timescaledb-tsl-2.*.so' \) "${exclude_patterns[@]}" -delete
 
     # Install 3rd party stuff
-    # pgvecto.rs start
-    if [ "${version%.*}" -ge 14 ]; then
-        (
-            mkdir -p pgvecto.rs
-            cd pgvecto.rs
-            ARCH="$(dpkg --print-architecture)"
-            if [ "$ARCH" = "amd64" ]; then
-                PGVECTORS_ARCH='amd64'
-            else
-                PGVECTORS_ARCH='arm64'
-            fi
-            curl -kOL "https://github.com/tensorchord/pgvecto.rs/releases/download/v${PGVECTO_RS}/vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
-            apt-get install -y "./vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
-            rm -Rf "vectors-pg${version}_${PGVECTO_RS}_${PGVECTORS_ARCH}.deb"
-        )
-    fi
-    # pgvecto.rs end
-    
     # VectorChord start
     if [ "${version%.*}" -ge 14 ]; then
         (
